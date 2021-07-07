@@ -30,7 +30,6 @@ The goal of saver is to save output from R, in particular tables and images, whi
     - Record version of any other key packages used
     - Allow recording of comments to be printed along with the object. 
 
-
 ## Examples
 
 ```{r }
@@ -38,7 +37,7 @@ library(saver)
 library(ggplot2)
 ```
 
-Save a `ggplot` object efficiently, in the sense that no unnused variables are saved in the environments enclosed by the `ggplot` object. 
+Save a `ggplot` object efficiently, in the sense that no unused variables are saved in the environments enclosed by the `ggplot` object. 
 ```{r }
 # TODO: Add demonstration that this reduces the size and when
 plot_fn <- function() ggplot(data.frame(x = 1, y = 1), aes(x,y)) + geom_point()

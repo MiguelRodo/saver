@@ -29,7 +29,7 @@ library(saver)
 library(ggplot2)
 ```
 
-Save a `ggplot` object efficiently, in the sense that no unnused
+Save a `ggplot` object efficiently, in the sense that no unused
 variables are saved in the environments enclosed by the `ggplot` object.
 
 ``` r
