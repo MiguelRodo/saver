@@ -35,8 +35,9 @@ variables are saved in the environments enclosed by the `ggplot` object.
 ``` r
 # TODO: Add demonstration that this reduces the size and when
 plot_fn <- function() ggplot(data.frame(x = 1, y = 1), aes(x,y)) + geom_point()
-ggsave_rds(plot_fn,
-           'example.rds')
+ggsave_rds(fun = plot_fn, 
+           filename = 'example.rds',
+           dir_save = file.path(here::here(), "inst", "extdata"))
 p <- readRDS('example.rds')
 p
 ```
