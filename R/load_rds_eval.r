@@ -21,6 +21,7 @@ load_rds_eval <- function(filename,
     fn_or_call = obj_out$fn_or_call,
     p_dots = obj_out$p_dots,
     filename = filename,
-    return_obj = TRUE
+    return_obj = TRUE, 
+    test = FALSE
   )
 }

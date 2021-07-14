@@ -27,6 +27,17 @@
 #' If \code{FALSE}, then \code{fn_or_call}
 #' is not evaluated even if it is not \code{NULL}.
 #' Default is \code{TRUE}.
+#' @param test logical.
+#' If \code{FALSE} and \code{eval_fun == FALSE}, then
+#' \code{load_rds_eval} is run to see if the
+#' saved object can be used in evaluation without
+#' returning an error. In particular, this is used
+#' to check that everything that should be saved
+#' via \code{...} is saved. Default is \code{FALSE}.
+#' @param  message_size numeric. If \code{test == TRUE},
+#' then a message is printed if the size exceeds \code{warning} in MB.
+#' Default is 1.
+#' Set to 0 to always message the size if \code{test == TRUE}.
 #' @param ... name-value pairs (\code{alist}).
 #' These are passed to code{fn_or_call} as parameter-argument pairs.
 #'
@@ -60,6 +71,8 @@ save_rds_eval <- function(fn_or_call = NULL,
                           dir_save = NULL,
                           return_obj = FALSE,
                           eval_fun = TRUE,
+                          test = FALSE,
+                          message_size = 1,
                           ...) {
 
   # prep
@@ -92,7 +105,9 @@ save_rds_eval <- function(fn_or_call = NULL,
         fn_or_call = fn_or_call,
         p_dots = p_dots,
         filename = filename,
-        return_obj = return_obj
+        return_obj = return_obj,
+        test = test,
+        message_size = message_size
       )
     )
   }
@@ -109,7 +124,9 @@ save_rds_eval <- function(fn_or_call = NULL,
     fn_or_call = fn_or_call,
     p_dots = p_dots,
     filename = filename,
-    return_obj = return_obj
+    return_obj = return_obj,
+    test = test,
+    message_size = message_size
     )
 }
 
@@ -118,7 +135,9 @@ save_rds_eval <- function(fn_or_call = NULL,
 .save_rds_eval <- function(fn_or_call,
                            p_dots,
                            filename,
-                           return_obj) {
+                           return_obj,
+                           test,
+                           message_size) {
   UseMethod(".save_rds_eval")
 }
 
@@ -127,7 +146,9 @@ save_rds_eval <- function(fn_or_call = NULL,
 .save_rds_eval.function <- function(fn_or_call,
                                     p_dots,
                                     filename,
-                                    return_obj) {
+                                    return_obj,
+                                    test,
+                                    message_size) {
 
   # set function environment to new env one below global
   # so that execution environment
@@ -161,6 +182,12 @@ save_rds_eval <- function(fn_or_call = NULL,
     file = filename
   )
 
+  .test_rds_eval(
+    test = test,
+    filename = filename,
+    message_size = message_size
+  )
+
   if (!return_obj) {
     return(invisible(TRUE))
   }
@@ -172,7 +199,9 @@ save_rds_eval <- function(fn_or_call = NULL,
 .save_rds_eval.call <- function(fn_or_call,
                                 p_dots,
                                 filename,
-                                return_obj) {
+                                return_obj,
+                                test,
+                                message_size) {
 
   env_eval <- list2env(p_dots, parent = .GlobalEnv)
   obj_out <- eval(fn_or_call, envir = env_eval)
@@ -180,6 +209,12 @@ save_rds_eval <- function(fn_or_call = NULL,
   saveRDS(
     object = obj_out,
     file = filename
+  )
+
+  .test_rds_eval(
+    test = test,
+    filename = filename,
+    message_size = message_size
   )
 
   if (!return_obj) {
@@ -193,7 +228,9 @@ save_rds_eval <- function(fn_or_call = NULL,
 .save_rds_eval.name <- function(fn_or_call,
                                 p_dots,
                                 filename,
-                                return_obj) {
+                                return_obj,
+                                test,
+                                message_size) {
   .save_rds_eval.call(
     fn_or_call = fn_or_call,
     p_dots = p_dots,
@@ -205,7 +242,9 @@ save_rds_eval <- function(fn_or_call = NULL,
 .save_rds_eval_non <- function(fn_or_call,
                                 p_dots,
                                 filename,
-                                return_obj) {
+                                return_obj,
+                                test,
+                                message_size) {
 
   obj_out <- list(
     fn_or_call = fn_or_call,
@@ -219,10 +258,56 @@ save_rds_eval <- function(fn_or_call = NULL,
     file = filename
   )
 
+  .test_rds_eval(test = test,
+                 filename = filename,
+                 message_size = message_size)
+
   if (!return_obj) {
     return(invisible(TRUE))
   }
 
   obj_out
 
+}
+
+
+#' @title Test whether object can be loaded and its size
+.test_rds_eval <- function(test,
+                           filename,
+                           message_size) {
+
+  if (!test) {
+    return(invisible(TRUE))
+  }
+
+  obj_test <- try(
+    load_rds_eval(
+      filename = filename
+    ),
+    silent = TRUE
+  )
+  if (class(obj_test) == "try-error") {
+    stop(
+      paste0(
+        "could not evaluate saver_uneval object '",
+        basename(filename), "' (msg: ",
+        attr(obj_test, "condition")$message, ")"
+      ),
+      call. = FALSE
+    )
+  } else {
+    object_size <- pryr::object_size(obj_test)
+    if (object_size / 1e6 >= message_size) {
+      message(
+        paste0(
+          basename(filename),
+          " is ",
+          round(pryr::object_size(obj_test) / 1e6, 1),
+          "MB"
+        )
+      )
+    }
+  }
+
+  invisible(TRUE)
 }

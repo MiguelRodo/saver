@@ -68,7 +68,7 @@ test_that("save_rds_eval works", {
   # call
   # -----------------------
 
-  # evaluation, with a function
+  # evaluation, with a call
   x <- save_rds_eval(
     fn_or_call = quote(mean(x = x)),
     filename = "mean",
@@ -93,7 +93,7 @@ test_that("save_rds_eval works", {
   )
   file.remove(file.path(dir_save, "mean.rds"))
 
-  # no evaluation, with a function
+  # no evaluation, with a call
   x <- save_rds_eval(
     fn_or_call = quote(mean(x = x)),
     filename = "mean",
@@ -156,4 +156,92 @@ test_that("save_rds_eval works", {
     names(parent.env(attr(small_obj, ".Environment"))),
     ""[-1]
   )
+  unlink(dir_save, recursive = TRUE)
+
+  # check that checks pass and
+  # fail when they should
+  # -------------------------------
+
+  # no evaluation, with a call
+  x <- save_rds_eval(
+    fn_or_call = quote(mean(x = x)),
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = FALSE,
+    test = TRUE,
+    message_size = 1,
+    x = 1:5
+  )
+
+  expect_error(save_rds_eval(
+    fn_or_call = quote(mean(x = x)),
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = FALSE,
+    test = TRUE,
+    y = "a"
+  ))
+
+  rm('x')
+
+  expect_error(save_rds_eval(
+    fn_or_call = quote(mean(x = x)),
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = FALSE,
+    test = TRUE,
+    message_size = 1,
+    y = "a"
+  ))
+
+  # check that messages are delivered
+  # when they should be
+  # -------------------------------
+
+
+  expect_message(save_rds_eval(
+    fn_or_call = function() cars,
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = TRUE,
+    test = TRUE,
+    message_size = 0
+  ))
+
+  expect_silent(save_rds_eval(
+    fn_or_call = function() cars,
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = FALSE,
+    test = TRUE,
+    message_size = 1
+  ))
+
+  # no eval
+
+  expect_message(save_rds_eval(
+    fn_or_call = function() cars,
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = FALSE,
+    test = TRUE,
+    message_size = 0
+  ))
+
+  expect_silent(save_rds_eval(
+    fn_or_call = function() cars,
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = FALSE,
+    test = TRUE,
+    message_size = 1
+  ))
+
 })

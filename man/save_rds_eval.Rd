@@ -10,6 +10,8 @@ save_rds_eval(
   dir_save = NULL,
   return_obj = FALSE,
   eval_fun = TRUE,
+  test = FALSE,
+  message_size = 1,
   ...
 )
 }
@@ -34,6 +36,19 @@ Default is \code{FALSE}.}
 If \code{FALSE}, then \code{fn_or_call}
 is not evaluated even if it is not \code{NULL}.
 Default is \code{TRUE}.}
+
+\item{test}{logical.
+If \code{FALSE} and \code{eval_fun == FALSE}, then
+\code{load_rds_eval} is run to see if the
+saved object can be used in evaluation without
+returning an error. In particular, this is used
+to check that everything that should be saved
+via \code{...} is saved. Default is \code{FALSE}.}
+
+\item{message_size}{numeric. If \code{test == TRUE},
+then a message is printed if the size exceeds \code{warning} in MB.
+Default is 1.
+Set to 0 to always message the size if \code{test == TRUE}.}
 
 \item{...}{name-value pairs (\code{alist}).
 These are passed to code{fn_or_call} as parameter-argument pairs.}
