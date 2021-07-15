@@ -153,7 +153,27 @@ save_rds_eval <- function(fn_or_call = NULL,
   # set function environment to new env one below global
   # so that execution environment
   # cannot enclose anything (permanent)
-  environment(fn_or_call) <- new.env(parent = .GlobalEnv)
+  defined_in_pkg <- purrr::map_lgl(
+    rlang::env_parents(environment(fn_or_call)),
+    isNamespace
+  ) %>%
+    any()
+
+  environment(fn_or_call) <- switch(
+    as.character(defined_in_pkg),
+    "TRUE" = new.env(
+      parent = rlang::env_parents(environment(fn_or_call)) %>%
+        magrittr::extract2(
+          min(which(
+            purrr::map_lgl(
+              rlang::env_parents(environment(fn_or_call)),
+              isNamespace
+            )
+          ))
+        )
+      ),
+    "FALSE" = new.env(parent = .GlobalEnv)
+  )
 
   # create call text to be parsed
   parse_text <- "fn_or_call("
@@ -167,14 +187,14 @@ save_rds_eval <- function(fn_or_call = NULL,
   }
 
   if (length(p_dots) > 0) {
-    parse_text <- stringr::str_sub(parse_text, end = -3)
+    parse_text <- stringr::str_sub(parse_text, end = - 3)
   }
 
   parse_text <- paste0(parse_text, ")")
 
   # evaluate in current environment
   obj_out <- eval(
-    parse(text = parse_text)
+    rlang::parse_expr(parse_text)
   )
 
   saveRDS(
@@ -203,7 +223,29 @@ save_rds_eval <- function(fn_or_call = NULL,
                                 test,
                                 message_size) {
 
-  env_eval <- list2env(p_dots, parent = .GlobalEnv)
+  saved_in_pkg <- purrr::map_lgl(
+    rlang::env_parents(rlang::caller_env(n = 2)),
+    isNamespace
+  ) %>%
+    any()
+
+  env_eval <- switch(
+    as.character(saved_in_pkg),
+    "TRUE" = list2env(
+      p_dots,
+      parent = rlang::env_parents() %>%
+        magrittr::extract2(
+          min(which(
+            purrr::map_lgl(
+              rlang::env_parents(),
+              isNamespace
+            )
+          ))
+        )
+    ),
+    "FALSE" = list2env(p_dots, parent = .GlobalEnv)
+  )
+
   obj_out <- eval(fn_or_call, envir = env_eval)
 
   saveRDS(
@@ -240,15 +282,88 @@ save_rds_eval <- function(fn_or_call = NULL,
 }
 
 .save_rds_eval_non <- function(fn_or_call,
-                                p_dots,
-                                filename,
-                                return_obj,
-                                test,
-                                message_size) {
+                               p_dots,
+                               filename,
+                               return_obj,
+                               test,
+                               message_size) {
+
+  if (is.function(fn_or_call)) {
+    defined_in_pkg <- purrr::map_lgl(
+      rlang::env_parents(environment(fn_or_call)),
+      isNamespace
+    ) %>%
+      any()
+
+    env_eval_parent <- switch(as.character(defined_in_pkg),
+      "TRUE" = new.env(
+        parent = rlang::env_parents(environment(fn_or_call)) %>%
+          magrittr::extract2(
+            min(which(
+              purrr::map_lgl(
+                rlang::env_parents(environment(fn_or_call)),
+                isNamespace
+              )
+            ))
+          )
+      ),
+      "FALSE" = .GlobalEnv
+    )
+
+    env_eval <- list2env(
+      x = p_dots,
+      parent = env_eval_parent
+    )
+    environment(fn_or_call) <- env_eval
+
+    if (FALSE) {
+      environment(fn_or_call) <- switch(as.character(defined_in_pkg),
+        "TRUE" = new.env(
+          parent = rlang::env_parents(environment(fn_or_call)) %>%
+            magrittr::extract2(
+              min(which(
+                purrr::map_lgl(
+                  rlang::env_parents(environment(fn_or_call)),
+                  isNamespace
+                )
+              ))
+            )
+            ),
+        "FALSE" = new.env(parent = .GlobalEnv)
+      )
+      env_eval <- .GlobalEnv
+    }
+
+  } else {
+    # calls do not enclose environments,
+    # so only give a warning if call is saved
+    # from inside environment
+    env_parents_list <- rlang::env_parents(rlang::caller_env(n = 2))
+    saved_in_pkg <- purrr::map_lgl(
+      env_parents_list,
+      isNamespace
+    ) %>%
+      any()
+
+    env_eval_parent <- switch(as.character(saved_in_pkg),
+      "TRUE" = env_parents_list[[
+        min(which(
+          purrr::map_lgl(env_parents_list, isNamespace)
+        ))
+      ]],
+      "FALSE" = .GlobalEnv
+    )
+
+     env_eval <- list2env(
+       p_dots,
+       parent = env_eval_parent
+       )
+  }
 
   obj_out <- list(
     fn_or_call = fn_or_call,
-    p_dots = p_dots
+    p_dots = p_dots,
+    env_eval = env_eval
   )
 
   class(obj_out) <- "saver_uneval"
@@ -258,9 +373,13 @@ save_rds_eval <- function(fn_or_call = NULL,
     file = filename
   )
 
-  .test_rds_eval(test = test,
-                 filename = filename,
-                 message_size = message_size)
+  if (test) {
+    .test_rds_eval(
+      test = test,
+      filename = filename,
+      message_size = message_size
+    )
+  }
 
   if (!return_obj) {
     return(invisible(TRUE))

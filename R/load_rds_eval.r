@@ -1,5 +1,6 @@
 load_rds_eval <- function(filename,
-                          dir_save = NULL) {
+                          dir_save = NULL,
+                          eval = TRUE) {
 
   filename <- ifelse(
     grepl(".rds$", filename),
@@ -13,15 +14,13 @@ load_rds_eval <- function(filename,
 
   obj_out <- readRDS(filename)
 
-  if (class(obj_out) != "saver_uneval") {
+  if (class(obj_out) != "saver_uneval" || !eval) {
     return(obj_out)
   }
 
-  .save_rds_eval(
+  eval_rds(
     fn_or_call = obj_out$fn_or_call,
     p_dots = obj_out$p_dots,
-    filename = filename,
-    return_obj = TRUE, 
-    test = FALSE
+    env_eval = obj_out$env_eval
   )
 }

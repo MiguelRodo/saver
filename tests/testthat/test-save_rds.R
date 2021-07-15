@@ -6,6 +6,10 @@ test_that("save_rds_eval works", {
     "test",
     "save_rds_eval"
   )
+  if (!dir.exists(dir_save)) dir.create(
+    dir_save,
+    recursive = TRUE
+  )
 
   # function
   # -----------------------
@@ -48,7 +52,7 @@ test_that("save_rds_eval works", {
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
   rds_saved <- readRDS(file.path(dir_save, "mean.rds"))
   expect_identical(class(rds_saved), "saver_uneval")
-  expect_identical(names(rds_saved), c("fn_or_call", "p_dots"))
+  expect_identical(names(rds_saved), c("fn_or_call", "p_dots", "env_eval"))
 
   # check that object is then evaluated
   # when loading correctly
@@ -107,7 +111,10 @@ test_that("save_rds_eval works", {
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
   rds_saved <- readRDS(file.path(dir_save, "mean.rds"))
   expect_identical(class(rds_saved), "saver_uneval")
-  expect_identical(names(rds_saved), c("fn_or_call", "p_dots"))
+  expect_identical(
+    names(rds_saved),
+    c("fn_or_call", "p_dots", "env_eval")
+  )
 
   # check that object is then evaluated
   # when loading correctly
@@ -127,9 +134,10 @@ test_that("save_rds_eval works", {
   # -------------------------------
 
   test_fn <- function() {
-
     rndm_vec <- rnorm(1e5)
-    f <- function() ~x
+    f <- function() {
+      ~x
+    }
     saveRDS(f(), file.path(dir_save, "large.rds"))
     save_rds_eval(
       fn_or_call = f,
@@ -139,23 +147,27 @@ test_that("save_rds_eval works", {
       eval_fun = TRUE
     )
   }
+  options(warn = 1)
+  options(warn = 2)
   test_fn()
 
   large_obj <- readRDS(file.path(dir_save, "large.rds"))
   small_obj <- readRDS(file.path(dir_save, "small.rds"))
-  expect_true(pryr::object_size(large_obj) > 30 * pryr::object_size(small_obj))
+  expect_true(
+    pryr::object_size(large_obj) >
+      30 * pryr::object_size(small_obj)
+  )
   expect_identical(
+    # names(parent.env(large_obj)),
     names(parent.env(attr(large_obj, ".Environment"))),
     c("f", "rndm_vec")
   )
   expect_identical(
+    # names(parent.env(small_obj)),
     names(attr(small_obj, ".Environment")),
     ""[-1]
   )
-  expect_identical(
-    names(parent.env(attr(small_obj, ".Environment"))),
-    ""[-1]
-  )
+
   unlink(dir_save, recursive = TRUE)
 
   # check that checks pass and
@@ -174,17 +186,10 @@ test_that("save_rds_eval works", {
     x = 1:5
   )
 
-  expect_error(save_rds_eval(
-    fn_or_call = quote(mean(x = x)),
-    filename = "mean",
-    dir_save = dir_save,
-    return_obj = FALSE,
-    eval_fun = FALSE,
-    test = TRUE,
-    y = "a"
-  ))
-
-  rm('x')
+  try(
+    suppressWarnings(rm("x", envir = .GlobalEnv)),
+    silent = TRUE
+  )
 
   expect_error(save_rds_eval(
     fn_or_call = quote(mean(x = x)),
@@ -193,8 +198,7 @@ test_that("save_rds_eval works", {
     return_obj = FALSE,
     eval_fun = FALSE,
     test = TRUE,
-    message_size = 1,
-    y = "a"
+    message_size = 1
   ))
 
   # check that messages are delivered
@@ -244,4 +248,16 @@ test_that("save_rds_eval works", {
     message_size = 1
   ))
 
+  # test with a function that is loaded in a package
+  expect_type(
+    save_rds_eval(
+      fn_or_call = test_fn_2391,
+      filename = "test_fn_testing",
+      dir_save = dir_save,
+      return_obj = TRUE,
+      eval_fun = TRUE,
+      test = FALSE
+    ),
+    "closure"
+  )
 })
