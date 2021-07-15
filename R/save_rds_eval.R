@@ -156,21 +156,13 @@ save_rds_eval <- function(fn_or_call = NULL,
   defined_in_pkg <- purrr::map_lgl(
     rlang::env_parents(environment(fn_or_call)),
     isNamespace
-  ) %>%
-    any()
+  )
+  defined_in_pkg <- any(defined_in_pkg)
 
   environment(fn_or_call) <- switch(
     as.character(defined_in_pkg),
-    "TRUE" = new.env(
-      parent = rlang::env_parents(environment(fn_or_call)) %>%
-        magrittr::extract2(
-          min(which(
-            purrr::map_lgl(
-              rlang::env_parents(environment(fn_or_call)),
-              isNamespace
-            )
-          ))
-        )
+    "TRUE" = list2env(
+      p_dots, parent = .get_nearest_namespace(environment(fn_or_call))
       ),
     "FALSE" = new.env(parent = .GlobalEnv)
   )
@@ -226,23 +218,16 @@ save_rds_eval <- function(fn_or_call = NULL,
   saved_in_pkg <- purrr::map_lgl(
     rlang::env_parents(rlang::caller_env(n = 2)),
     isNamespace
-  ) %>%
-    any()
+  )
+  saved_in_pkg <- any(saved_in_pkg)
 
   env_eval <- switch(
     as.character(saved_in_pkg),
     "TRUE" = list2env(
-      p_dots,
-      parent = rlang::env_parents() %>%
-        magrittr::extract2(
-          min(which(
-            purrr::map_lgl(
-              rlang::env_parents(),
-              isNamespace
-            )
-          ))
-        )
-    ),
+      p_dots, parent = .get_nearest_namespace(
+        rlang::caller_env(n = 2)
+      )
+      ),
     "FALSE" = list2env(p_dots, parent = .GlobalEnv)
   )
 
@@ -292,20 +277,12 @@ save_rds_eval <- function(fn_or_call = NULL,
     defined_in_pkg <- purrr::map_lgl(
       rlang::env_parents(environment(fn_or_call)),
       isNamespace
-    ) %>%
-      any()
+    )
+    defined_in_pkg <- any(defined_in_pkg)
 
     env_eval_parent <- switch(as.character(defined_in_pkg),
-      "TRUE" = new.env(
-        parent = rlang::env_parents(environment(fn_or_call)) %>%
-          magrittr::extract2(
-            min(which(
-              purrr::map_lgl(
-                rlang::env_parents(environment(fn_or_call)),
-                isNamespace
-              )
-            ))
-          )
+      "TRUE" = list2env(
+      p_dots, parent = .get_nearest_namespace(environment(fn_or_call))
       ),
       "FALSE" = .GlobalEnv
     )
@@ -316,24 +293,6 @@ save_rds_eval <- function(fn_or_call = NULL,
     )
     environment(fn_or_call) <- env_eval
 
-    if (FALSE) {
-      environment(fn_or_call) <- switch(as.character(defined_in_pkg),
-        "TRUE" = new.env(
-          parent = rlang::env_parents(environment(fn_or_call)) %>%
-            magrittr::extract2(
-              min(which(
-                purrr::map_lgl(
-                  rlang::env_parents(environment(fn_or_call)),
-                  isNamespace
-                )
-              ))
-            )
-            ),
-        "FALSE" = new.env(parent = .GlobalEnv)
-      )
-      env_eval <- .GlobalEnv
-    }
-
   } else {
     # calls do not enclose environments,
     # so only give a warning if call is saved
@@ -342,15 +301,15 @@ save_rds_eval <- function(fn_or_call = NULL,
     saved_in_pkg <- purrr::map_lgl(
       env_parents_list,
       isNamespace
-    ) %>%
-      any()
+    )
+    saved_in_pkg <- any(saved_in_pkg)
 
     env_eval_parent <- switch(as.character(saved_in_pkg),
       "TRUE" = env_parents_list[[
         min(which(
           purrr::map_lgl(env_parents_list, isNamespace)
         ))
-      ]],
+        ]],
       "FALSE" = .GlobalEnv
     )
 
@@ -429,4 +388,15 @@ save_rds_eval <- function(fn_or_call = NULL,
   }
 
   invisible(TRUE)
+}
+
+.get_nearest_namespace <- function(env) {
+  env_parents_list <- rlang::env_parents(env)
+  ind_nearest_namespace <- min(which(
+    purrr::map_lgl(
+      rlang::env_parents(env),
+      isNamespace
+    )
+  ))
+  env_parents_list[[ind_nearest_namespace]]
 }

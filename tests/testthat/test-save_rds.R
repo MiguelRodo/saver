@@ -15,7 +15,7 @@ test_that("save_rds_eval works", {
   # -----------------------
 
   # evaluation, with a function
-  x <- save_rds_eval(
+  save_rds_eval(
     fn_or_call = mean,
     filename = "mean",
     dir_save = dir_save,
@@ -40,7 +40,7 @@ test_that("save_rds_eval works", {
   file.remove(file.path(dir_save, "mean.rds"))
 
   # no evaluation, with a function
-  x <- save_rds_eval(
+  save_rds_eval(
     fn_or_call = mean,
     filename = "mean",
     dir_save = dir_save,
@@ -73,7 +73,7 @@ test_that("save_rds_eval works", {
   # -----------------------
 
   # evaluation, with a call
-  x <- save_rds_eval(
+  save_rds_eval(
     fn_or_call = quote(mean(x = x)),
     filename = "mean",
     dir_save = dir_save,
@@ -98,7 +98,7 @@ test_that("save_rds_eval works", {
   file.remove(file.path(dir_save, "mean.rds"))
 
   # no evaluation, with a call
-  x <- save_rds_eval(
+  save_rds_eval(
     fn_or_call = quote(mean(x = x)),
     filename = "mean",
     dir_save = dir_save,
@@ -175,7 +175,7 @@ test_that("save_rds_eval works", {
   # -------------------------------
 
   # no evaluation, with a call
-  x <- save_rds_eval(
+  save_rds_eval(
     fn_or_call = quote(mean(x = x)),
     filename = "mean",
     dir_save = dir_save,
