@@ -261,10 +261,79 @@ test_that("save_rds_eval works", {
     "closure"
   )
 
-  # .data usage
+  # .data usage as a data frame - character
   # ----------------------
 
   file.remove(file.path(dir_save, "mean.rds"))
+
+  saveRDS(data.frame(x = 1:5), file.path(tempdir(), "test_df"))
+  path_chr <- file.path(tempdir(), "test_df")
+  path_call <- quote(file.path(tempdir(), "test_df"))
+
+  # evaluation, with a call
+  save_rds_eval(
+    fn_or_call = quote(mean(x = .data$x)),
+    .data = path_chr,
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = TRUE,
+    test = TRUE,
+    message_size = 1
+  )
+
+  expect_true(file.exists(file.path(dir_save, "mean.rds")))
+  expect_true(is.numeric(readRDS(file.path(dir_save, "mean.rds"))))
+  expect_identical(
+      readRDS(file.path(dir_save, "mean.rds")),
+      3
+    )
+  y <- load_rds_eval(
+    filename = "mean.rds",
+    dir_save = dir_save
+  )
+  expect_identical(
+    readRDS(file.path(dir_save, "mean.rds")),
+    y
+  )
+  file.remove(file.path(dir_save, "mean.rds"))
+
+  # no evaluation, with a call
+  save_rds_eval(
+    fn_or_call = quote(mean(x = .data$x)),
+    .data = path_chr,
+    filename = "mean",
+    dir_save = dir_save,
+    return_obj = FALSE,
+    eval_fun = FALSE,
+    test = TRUE,
+    message_size = 1
+  )
+
+  expect_true(file.exists(file.path(dir_save, "mean.rds")))
+  rds_saved <- readRDS(file.path(dir_save, "mean.rds"))
+  expect_identical(class(rds_saved), "saver_uneval")
+  expect_identical(names(rds_saved), c("fn_or_call", "p_dots", "env_eval"))
+
+  expect_error(
+    save_rds_eval(
+      fn_or_call = quote(mean(x = .data$x)),
+      .data = data.frame(x = 1:5),
+      filename = "mean",
+      dir_save = dir_save,
+      return_obj = FALSE,
+      eval_fun = FALSE,
+      test = TRUE,
+      message_size = 1,
+      .data = "7"
+    )
+  )
+
+
+  file.remove(file.path(dir_save, "mean.rds"))
+
+  # .data usage as a character
+  # ----------------
 
   # evaluation, with a call
   save_rds_eval(
@@ -281,9 +350,9 @@ test_that("save_rds_eval works", {
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
   expect_true(is.numeric(readRDS(file.path(dir_save, "mean.rds"))))
   expect_identical(
-      readRDS(file.path(dir_save, "mean.rds")),
-      3
-    )
+    readRDS(file.path(dir_save, "mean.rds")),
+    3
+  )
   y <- load_rds_eval(
     filename = "mean.rds",
     dir_save = dir_save
@@ -324,5 +393,67 @@ test_that("save_rds_eval works", {
       .data = "7"
     )
   )
+
+   # .data usage as a call
+   # ----------------
+
+   # evaluation, with a call
+   save_rds_eval(
+     fn_or_call = quote(mean(x = .data$x)),
+     .data = path_call,
+     filename = "mean",
+     dir_save = dir_save,
+     return_obj = FALSE,
+     eval_fun = TRUE,
+     test = TRUE,
+     message_size = 1
+   )
+
+   expect_true(file.exists(file.path(dir_save, "mean.rds")))
+   expect_true(is.numeric(readRDS(file.path(dir_save, "mean.rds"))))
+   expect_identical(
+     readRDS(file.path(dir_save, "mean.rds")),
+     3
+   )
+   y <- load_rds_eval(
+     filename = "mean.rds",
+     dir_save = dir_save
+   )
+   expect_identical(
+     readRDS(file.path(dir_save, "mean.rds")),
+     y
+   )
+   file.remove(file.path(dir_save, "mean.rds"))
+
+   # no evaluation, with a call
+   save_rds_eval(
+     fn_or_call = quote(mean(x = .data$x)),
+     .data = path_call,
+     filename = "mean",
+     dir_save = dir_save,
+     return_obj = FALSE,
+     eval_fun = FALSE,
+     test = TRUE,
+     message_size = 1
+   )
+
+   expect_true(file.exists(file.path(dir_save, "mean.rds")))
+   rds_saved <- readRDS(file.path(dir_save, "mean.rds"))
+   expect_identical(class(rds_saved), "saver_uneval")
+   expect_identical(names(rds_saved), c("fn_or_call", "p_dots", "env_eval"))
+
+   expect_error(
+     save_rds_eval(
+       fn_or_call = quote(mean(x = .data$x)),
+       .data = data.frame(x = 1:5),
+       filename = "mean",
+       dir_save = dir_save,
+       return_obj = FALSE,
+       eval_fun = FALSE,
+       test = TRUE,
+       message_size = 1,
+       .data = "7"
+     )
+   )
 
 })

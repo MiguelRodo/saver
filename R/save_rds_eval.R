@@ -13,14 +13,22 @@
 #'
 #' @param fn_or_call function or call.
 #' Function whose output is the `ggplot` object.
-#' @param .data character or any other object (esp. a data frame). 
+#' @param .data character, call or any other object 
+#' (esp. a data frame).
 #' If the data are large and you wish to
-#' save merely a pointer to it, then provide a character
-#' to \code{.data} that is the path to an RDS object
-#' that \code{.data} will read in and attach to the
-#' evaluation environment under the name \code{.data}.
+#' save merely a pointer to it, then you can 
+#' either provide a \code{character} or a call
+#' that evaluates to a character. 
+#' Both will ultimately represent character paths, 
+#' that will then be supplied to \code{readRDS}, 
+#' with the resultant object then provided to the
+#' function/call with the name \code{.data}. 
+#' Use a call rather than a character if 
+#' you want the path to be correct on 
+#' different computers, e.g. by using \code{here::here()}
 #' If \code{.data} is not a character or \code{NULL}, then it will
-#' be attached as is to the environment. If \code{NULL}, 
+#' be attached as is to the environment. If \code{data}
+#' is  \code{NULL},
 #' then will not be attached. Default is \code{NULL}.
 #' @param filename character.
 #' File name of output object.
@@ -187,11 +195,17 @@ save_rds_eval <- function(fn_or_call = NULL,
     "FALSE" = new.env(parent = .GlobalEnv)
   )
 
-  if (is.character(.data)) {
-    .data <- readRDS(.data)
-  }
+  .data <- switch(class(.data)[1],
+    "character" = readRDS(.data),
+    "call" = readRDS(
+      eval(.data, envir = rlang::caller_env(n = 2))
+      ),
+    .data
+  )
 
-  assign(".data", .data, envir = environment(fn_or_call))
+  if (!is.null(.data)) {
+    assign(".data", value = .data, envir = environment(fn_or_call))
+  }
 
   # create call text to be parsed
   parse_text <- "fn_or_call("
@@ -258,11 +272,17 @@ save_rds_eval <- function(fn_or_call = NULL,
     "FALSE" = list2env(p_dots, parent = .GlobalEnv)
   )
 
-  if (is.character(.data)) {
-    .data <- readRDS(.data)
-  }
+  .data <- switch(class(.data)[1],
+    "character" = readRDS(.data),
+    "call" = readRDS(
+      eval(.data, envir = rlang::caller_env(n = 2))
+    ),
+    .data
+  )
 
-  assign(".data", .data, envir = env_eval)
+  if (!is.null(.data)) {
+    assign(".data", value = .data, envir = env_eval)
+  }
 
   obj_out <- eval(fn_or_call, envir = env_eval)
 
@@ -327,7 +347,19 @@ save_rds_eval <- function(fn_or_call = NULL,
       x = p_dots,
       parent = env_eval_parent
     )
-    assign(".data", .data, envir = env_eval)
+
+    .data <- switch(class(.data)[1],
+      "character" = readRDS(.data),
+      "call" = readRDS(
+        eval(.data, envir = rlang::caller_env(n = 2))
+      ),
+      .data
+    )
+
+    if (!is.null(.data)) {
+      assign(".data", value = .data, envir = env_eval)
+    }
+
     environment(fn_or_call) <- env_eval
 
   } else {
@@ -354,7 +386,18 @@ save_rds_eval <- function(fn_or_call = NULL,
        p_dots,
        parent = env_eval_parent
      )
-     assign(".data", .data, envir = env_eval)
+
+    .data <- switch(class(.data)[1],
+      "character" = readRDS(.data),
+      "call" = readRDS(
+        eval(.data, envir = rlang::caller_env(n = 2))
+      ),
+      .data
+    )
+
+    if (!is.null(.data)) {
+      assign(".data", value = .data, envir = env_eval)
+    }
   }
 
   obj_out <- list(
