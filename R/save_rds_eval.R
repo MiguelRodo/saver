@@ -112,6 +112,11 @@ save_rds_eval <- function(fn_or_call = NULL,
     filename <- file.path(dir_save, filename)
   }
 
+  filename <- normalizePath(
+    filename,
+    mustWork = FALSE
+  )
+
   # capture dots
   p_dots <- list(...)
 
@@ -241,7 +246,7 @@ save_rds_eval <- function(fn_or_call = NULL,
   )
 
   if (!return_obj) {
-    return(invisible(TRUE))
+    return(filename)
   }
   obj_out
 }
@@ -298,7 +303,7 @@ save_rds_eval <- function(fn_or_call = NULL,
   )
 
   if (!return_obj) {
-    return(invisible(TRUE))
+    return(filename)
   }
   obj_out
 }
@@ -422,7 +427,7 @@ save_rds_eval <- function(fn_or_call = NULL,
   }
 
   if (!return_obj) {
-    return(invisible(TRUE))
+    return(filename)
   }
 
   obj_out

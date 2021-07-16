@@ -12,6 +12,8 @@ load_rds_eval <- function(filename,
     filename <- file.path(dir_save, filename)
   }
 
+  filename <- normalizePath(filename)
+
   obj_out <- readRDS(filename)
 
   if (class(obj_out) != "saver_uneval" || !eval) {
