@@ -10,7 +10,7 @@ save_rds_eval(
   filename,
   dir_save = NULL,
   return_obj = FALSE,
-  eval_fun = TRUE,
+  eval = TRUE,
   test = FALSE,
   message_size = 1,
   ...
@@ -20,14 +20,22 @@ save_rds_eval(
 \item{fn_or_call}{function or call.
 Function whose output is the `ggplot` object.}
 
-\item{.data}{character or any other object (esp. a data frame). 
+\item{.data}{character, call or any other object 
+(esp. a data frame).
 If the data are large and you wish to
-save merely a pointer to it, then provide a character
-to \code{.data} that is the path to an RDS object
-that \code{.data} will read in and attach to the
-evaluation environment under the name \code{.data}.
+save merely a pointer to it, then you can 
+either provide a \code{character} or a call
+that evaluates to a character. 
+Both will ultimately represent character paths, 
+that will then be supplied to \code{readRDS}, 
+with the resultant object then provided to the
+function/call with the name \code{.data}. 
+Use a call rather than a character if 
+you want the path to be correct on 
+different computers, e.g. by using \code{here::here()}
 If \code{.data} is not a character or \code{NULL}, then it will
-be attached as is to the environment. If \code{NULL}, 
+be attached as is to the environment. If \code{data}
+is  \code{NULL},
 then will not be attached. Default is \code{NULL}.}
 
 \item{filename}{character.
@@ -43,13 +51,13 @@ Default is \code{NULL}, in which case the save directory is
 If \code{TRUE}, then the output of \code{fn_or_call} is returned.
 Default is \code{FALSE}.}
 
-\item{eval_fun}{logical.
+\item{eval}{logical.
 If \code{FALSE}, then \code{fn_or_call}
 is not evaluated even if it is not \code{NULL}.
 Default is \code{TRUE}.}
 
 \item{test}{logical.
-If \code{FALSE} and \code{eval_fun == FALSE}, then
+If \code{FALSE} and \code{eval == FALSE}, then
 \code{load_rds_eval} is run to see if the
 saved object can be used in evaluation without
 returning an error. In particular, this is used
@@ -66,10 +74,10 @@ These are passed to code{fn_or_call} as parameter-argument pairs.}
 }
 \value{
 If \code{return_obj == FALSE}, then \code{invisible(TRUE)}.
-If \code{return_obj == TRUE}, then output type depends on \code{eval_fun}.
-If \code{eval_fun == TRUE}, then the output from
+If \code{return_obj == TRUE}, then output type depends on \code{eval}.
+If \code{eval == TRUE}, then the output from
 evaluating \code{fn_or_call}.
-If \code{eval_fun == FALSE}, then
+If \code{eval == FALSE}, then
 \code{list(fn_or_call = fn_or_call, p_dots = p_dots)}.
 }
 \description{

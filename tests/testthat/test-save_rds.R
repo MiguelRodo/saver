@@ -23,6 +23,7 @@ test_that("save_rds_eval works", {
     eval = TRUE,
     x = 1:5
   )
+
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
   expect_true(is.numeric(readRDS(file.path(dir_save, "mean.rds"))))
   expect_identical(

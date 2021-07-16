@@ -1,3 +1,9 @@
+#' @title Load an RDS object saved with save_rds_eval
+#' 
+#' @description If object was not evaluated, it will be
+#' before being returned. 
+#' 
+#' @export
 load_rds_eval <- function(filename,
                           dir_save = NULL,
                           eval = TRUE) {
