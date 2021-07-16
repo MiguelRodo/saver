@@ -13,6 +13,15 @@
 #'
 #' @param fn_or_call function or call.
 #' Function whose output is the `ggplot` object.
+#' @param .data character or any other object (esp. a data frame). 
+#' If the data are large and you wish to
+#' save merely a pointer to it, then provide a character
+#' to \code{.data} that is the path to an RDS object
+#' that \code{.data} will read in and attach to the
+#' evaluation environment under the name \code{.data}.
+#' If \code{.data} is not a character or \code{NULL}, then it will
+#' be attached as is to the environment. If \code{NULL}, 
+#' then will not be attached. Default is \code{NULL}.
 #' @param filename character.
 #' File name of output object.
 #' Note that if it does not end in \code{".rds"}, \code{".rds"} is appended.
@@ -67,6 +76,7 @@
 #'
 #' @export
 save_rds_eval <- function(fn_or_call = NULL,
+                          .data = NULL,
                           filename,
                           dir_save = NULL,
                           return_obj = FALSE,
@@ -97,12 +107,19 @@ save_rds_eval <- function(fn_or_call = NULL,
   # capture dots
   p_dots <- list(...)
 
+  if ('.data' %in% names(p_dots)) {
+    stop("Use the .data parameter to
+    specify a data object, rather than
+    using .data as an element in the dotted list.")
+  }
+
   # do exit work immediately if nothing given
   # -------------------
   if (!eval_fun) {
     return(
       .save_rds_eval_non(
         fn_or_call = fn_or_call,
+        .data = .data,
         p_dots = p_dots,
         filename = filename,
         return_obj = return_obj,
@@ -123,6 +140,7 @@ save_rds_eval <- function(fn_or_call = NULL,
   .save_rds_eval(
     fn_or_call = fn_or_call,
     p_dots = p_dots,
+    .data = .data,
     filename = filename,
     return_obj = return_obj,
     test = test,
@@ -134,6 +152,7 @@ save_rds_eval <- function(fn_or_call = NULL,
 # function, call and name classes
 .save_rds_eval <- function(fn_or_call,
                            p_dots,
+                           .data,
                            filename,
                            return_obj,
                            test,
@@ -145,6 +164,7 @@ save_rds_eval <- function(fn_or_call = NULL,
 # function is the input
 .save_rds_eval.function <- function(fn_or_call,
                                     p_dots,
+                                    .data,
                                     filename,
                                     return_obj,
                                     test,
@@ -159,13 +179,19 @@ save_rds_eval <- function(fn_or_call = NULL,
   )
   defined_in_pkg <- any(defined_in_pkg)
 
-  environment(fn_or_call) <- switch(
-    as.character(defined_in_pkg),
+  environment(fn_or_call) <- switch(as.character(defined_in_pkg),
     "TRUE" = list2env(
-      p_dots, parent = .get_nearest_namespace(environment(fn_or_call))
-      ),
+      p_dots,
+      parent = .get_nearest_namespace(environment(fn_or_call))
+    ),
     "FALSE" = new.env(parent = .GlobalEnv)
   )
+
+  if (is.character(.data)) {
+    .data <- readRDS(.data)
+  }
+
+  assign(".data", .data, envir = environment(fn_or_call))
 
   # create call text to be parsed
   parse_text <- "fn_or_call("
@@ -210,6 +236,7 @@ save_rds_eval <- function(fn_or_call = NULL,
 # when input is a call
 .save_rds_eval.call <- function(fn_or_call,
                                 p_dots,
+                                .data,
                                 filename,
                                 return_obj,
                                 test,
@@ -221,15 +248,21 @@ save_rds_eval <- function(fn_or_call = NULL,
   )
   saved_in_pkg <- any(saved_in_pkg)
 
-  env_eval <- switch(
-    as.character(saved_in_pkg),
+  env_eval <- switch(as.character(saved_in_pkg),
     "TRUE" = list2env(
-      p_dots, parent = .get_nearest_namespace(
+      p_dots,
+      parent = .get_nearest_namespace(
         rlang::caller_env(n = 2)
       )
-      ),
+    ),
     "FALSE" = list2env(p_dots, parent = .GlobalEnv)
   )
+
+  if (is.character(.data)) {
+    .data <- readRDS(.data)
+  }
+
+  assign(".data", .data, envir = env_eval)
 
   obj_out <- eval(fn_or_call, envir = env_eval)
 
@@ -254,6 +287,7 @@ save_rds_eval <- function(fn_or_call = NULL,
 # when input is a call
 .save_rds_eval.name <- function(fn_or_call,
                                 p_dots,
+                                .data,
                                 filename,
                                 return_obj,
                                 test,
@@ -261,6 +295,7 @@ save_rds_eval <- function(fn_or_call = NULL,
   .save_rds_eval.call(
     fn_or_call = fn_or_call,
     p_dots = p_dots,
+    .data = .data,
     filename = filename,
     return_obj = return_obj
   )
@@ -268,6 +303,7 @@ save_rds_eval <- function(fn_or_call = NULL,
 
 .save_rds_eval_non <- function(fn_or_call,
                                p_dots,
+                               .data,
                                filename,
                                return_obj,
                                test,
@@ -291,6 +327,7 @@ save_rds_eval <- function(fn_or_call = NULL,
       x = p_dots,
       parent = env_eval_parent
     )
+    assign(".data", .data, envir = env_eval)
     environment(fn_or_call) <- env_eval
 
   } else {
@@ -316,7 +353,8 @@ save_rds_eval <- function(fn_or_call = NULL,
      env_eval <- list2env(
        p_dots,
        parent = env_eval_parent
-       )
+     )
+     assign(".data", .data, envir = env_eval)
   }
 
   obj_out <- list(

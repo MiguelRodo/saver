@@ -17,6 +17,14 @@ load_rds_eval <- function(filename,
   if (class(obj_out) != "saver_uneval" || !eval) {
     return(obj_out)
   }
+  .data <- switch(as.character(is.character(obj_out$.data)),
+    "TRUE" = readRDS(obj_out$.data),
+    "FALSE" = obj_out$.data
+  )
+
+  if (!is.null(.data)) {
+    assign(".data", value = .data, envir = obj_out$env_eval)
+  }
 
   eval_rds(
     fn_or_call = obj_out$fn_or_call,

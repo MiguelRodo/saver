@@ -6,6 +6,7 @@
 \usage{
 save_rds_eval(
   fn_or_call = NULL,
+  .data = NULL,
   filename,
   dir_save = NULL,
   return_obj = FALSE,
@@ -18,6 +19,16 @@ save_rds_eval(
 \arguments{
 \item{fn_or_call}{function or call.
 Function whose output is the `ggplot` object.}
+
+\item{.data}{character or any other object (esp. a data frame). 
+If the data are large and you wish to
+save merely a pointer to it, then provide a character
+to \code{.data} that is the path to an RDS object
+that \code{.data} will read in and attach to the
+evaluation environment under the name \code{.data}.
+If \code{.data} is not a character or \code{NULL}, then it will
+be attached as is to the environment. If \code{NULL}, 
+then will not be attached. Default is \code{NULL}.}
 
 \item{filename}{character.
 File name of output object.
