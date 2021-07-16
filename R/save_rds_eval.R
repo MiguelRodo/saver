@@ -40,12 +40,12 @@
 #' @param return_obj logical.
 #' If \code{TRUE}, then the output of \code{fn_or_call} is returned.
 #' Default is \code{FALSE}.
-#' @param eval_fun logical.
+#' @param eval logical.
 #' If \code{FALSE}, then \code{fn_or_call}
 #' is not evaluated even if it is not \code{NULL}.
 #' Default is \code{TRUE}.
 #' @param test logical.
-#' If \code{FALSE} and \code{eval_fun == FALSE}, then
+#' If \code{FALSE} and \code{eval == FALSE}, then
 #' \code{load_rds_eval} is run to see if the
 #' saved object can be used in evaluation without
 #' returning an error. In particular, this is used
@@ -59,10 +59,10 @@
 #' These are passed to code{fn_or_call} as parameter-argument pairs.
 #'
 #' @return If \code{return_obj == FALSE}, then \code{invisible(TRUE)}.
-#' If \code{return_obj == TRUE}, then output type depends on \code{eval_fun}.
-#' If \code{eval_fun == TRUE}, then the output from
+#' If \code{return_obj == TRUE}, then output type depends on \code{eval}.
+#' If \code{eval == TRUE}, then the output from
 #' evaluating \code{fn_or_call}.
-#' If \code{eval_fun == FALSE}, then
+#' If \code{eval == FALSE}, then
 #' \code{list(fn_or_call = fn_or_call, p_dots = p_dots)}.
 #'
 #' @details
@@ -88,7 +88,7 @@ save_rds_eval <- function(fn_or_call = NULL,
                           filename,
                           dir_save = NULL,
                           return_obj = FALSE,
-                          eval_fun = TRUE,
+                          eval = TRUE,
                           test = FALSE,
                           message_size = 1,
                           ...) {
@@ -128,7 +128,7 @@ save_rds_eval <- function(fn_or_call = NULL,
 
   # do exit work immediately if nothing given
   # -------------------
-  if (!eval_fun) {
+  if (!eval) {
     return(
       .save_rds_eval_non(
         fn_or_call = fn_or_call,
@@ -145,9 +145,9 @@ save_rds_eval <- function(fn_or_call = NULL,
   # stop if evaluation required but fn_or_call
   # not a call or a function (or a name)
   # -------------------
-  if (eval_fun && !class(fn_or_call)[1] %in% c("function", "call", "name")) {
+  if (eval && !class(fn_or_call)[1] %in% c("function", "call", "name")) {
     stop("fn_or_call must be a function or
-    a call (or a name) when eval_fun == TRUE")
+    a call (or a name) when eval == TRUE")
   }
 
   .save_rds_eval(

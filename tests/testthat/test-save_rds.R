@@ -20,7 +20,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = TRUE,
-    eval_fun = TRUE,
+    eval = TRUE,
     x = 1:5
   )
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
@@ -45,7 +45,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     x = 1:5
   )
 
@@ -78,7 +78,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = TRUE,
-    eval_fun = TRUE,
+    eval = TRUE,
     x = 1:5
   )
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
@@ -103,7 +103,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     x = 1:5
   )
 
@@ -144,7 +144,7 @@ test_that("save_rds_eval works", {
       filename = "small",
       dir_save = dir_save,
       return_obj = FALSE,
-      eval_fun = TRUE
+      eval = TRUE
     )
   }
   options(warn = 1)
@@ -180,7 +180,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     test = TRUE,
     message_size = 1,
     x = 1:5
@@ -196,7 +196,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     test = TRUE,
     message_size = 1
   ))
@@ -211,7 +211,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = TRUE,
+    eval = TRUE,
     test = TRUE,
     message_size = 0
   ))
@@ -221,7 +221,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     test = TRUE,
     message_size = 1
   ))
@@ -233,7 +233,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     test = TRUE,
     message_size = 0
   ))
@@ -243,7 +243,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     test = TRUE,
     message_size = 1
   ))
@@ -255,7 +255,7 @@ test_that("save_rds_eval works", {
       filename = "test_fn_testing",
       dir_save = dir_save,
       return_obj = TRUE,
-      eval_fun = TRUE,
+      eval = TRUE,
       test = FALSE
     ),
     "closure"
@@ -277,7 +277,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = TRUE,
+    eval = TRUE,
     test = TRUE,
     message_size = 1
   )
@@ -305,7 +305,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     test = TRUE,
     message_size = 1
   )
@@ -322,7 +322,7 @@ test_that("save_rds_eval works", {
       filename = "mean",
       dir_save = dir_save,
       return_obj = FALSE,
-      eval_fun = FALSE,
+      eval = FALSE,
       test = TRUE,
       message_size = 1,
       .data = "7"
@@ -342,7 +342,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = TRUE,
+    eval = TRUE,
     test = TRUE,
     message_size = 1
   )
@@ -370,7 +370,7 @@ test_that("save_rds_eval works", {
     filename = "mean",
     dir_save = dir_save,
     return_obj = FALSE,
-    eval_fun = FALSE,
+    eval = FALSE,
     test = TRUE,
     message_size = 1
   )
@@ -387,7 +387,7 @@ test_that("save_rds_eval works", {
       filename = "mean",
       dir_save = dir_save,
       return_obj = FALSE,
-      eval_fun = FALSE,
+      eval = FALSE,
       test = TRUE,
       message_size = 1,
       .data = "7"
@@ -404,7 +404,7 @@ test_that("save_rds_eval works", {
      filename = "mean",
      dir_save = dir_save,
      return_obj = FALSE,
-     eval_fun = TRUE,
+     eval = TRUE,
      test = TRUE,
      message_size = 1
    )
@@ -432,7 +432,7 @@ test_that("save_rds_eval works", {
      filename = "mean",
      dir_save = dir_save,
      return_obj = FALSE,
-     eval_fun = FALSE,
+     eval = FALSE,
      test = TRUE,
      message_size = 1
    )
@@ -449,7 +449,7 @@ test_that("save_rds_eval works", {
        filename = "mean",
        dir_save = dir_save,
        return_obj = FALSE,
-       eval_fun = FALSE,
+       eval = FALSE,
        test = TRUE,
        message_size = 1,
        .data = "7"
