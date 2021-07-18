@@ -13,18 +13,18 @@
 #'
 #' @param fn_or_call function or call.
 #' Function whose output is the `ggplot` object.
-#' @param .data character, call or any other object 
+#' @param .data character, call or any other object
 #' (esp. a data frame).
 #' If the data are large and you wish to
-#' save merely a pointer to it, then you can 
+#' save merely a pointer to it, then you can
 #' either provide a \code{character} or a call
-#' that evaluates to a character. 
-#' Both will ultimately represent character paths, 
-#' that will then be supplied to \code{readRDS}, 
+#' that evaluates to a character.
+#' Both will ultimately represent character paths,
+#' that will then be supplied to \code{readRDS},
 #' with the resultant object then provided to the
-#' function/call with the name \code{.data}. 
-#' Use a call rather than a character if 
-#' you want the path to be correct on 
+#' function/call with the name \code{.data}.
+#' Use a call rather than a character if
+#' you want the path to be correct on
 #' different computers, e.g. by using \code{here::here()}
 #' If \code{.data} is not a character or \code{NULL}, then it will
 #' be attached as is to the environment. If \code{data}
@@ -73,18 +73,20 @@
 #'
 #' @examples
 #' plot_fn <- function() {
-#'  ggplot(data.frame(x = 1, y = 1), aes(x,y)) + geom_point()
+#'   ggplot(data.frame(x = 1, y = 1), aes(x, y)) +
+#'     geom_point()
 #' }
 #' save_rds(plot_fn,
-#'          "example.rds",
-#'          return_obj = TRUE)
+#'   "example.rds",
+#'   return_obj = TRUE
+#' )
 #' p <- readRDS("example.rds")
 #' p
 #' pryr::object_size(p)
-#'
 #' @export
 save_rds_eval <- function(fn_or_call = NULL,
                           .data = NULL,
+                          .data_nm = ".data",
                           filename,
                           dir_save = NULL,
                           return_obj = FALSE,
@@ -96,7 +98,9 @@ save_rds_eval <- function(fn_or_call = NULL,
   # prep
   # --------------
 
-  if (missing(filename)) stop("filename must be supplied to save_rds")
+  if (missing(filename)) {
+    stop("filename must be supplied to save_rds")
+  }
 
   # set up file name to save to
   filename <- ifelse(
@@ -120,298 +124,38 @@ save_rds_eval <- function(fn_or_call = NULL,
   # capture dots
   p_dots <- list(...)
 
-  if ('.data' %in% names(p_dots)) {
-    stop("Use the .data parameter to
-    specify a data object, rather than
-    using .data as an element in the dotted list.")
-  }
-
-  # do exit work immediately if nothing given
-  # -------------------
-  if (!eval) {
-    return(
-      .save_rds_eval_non(
-        fn_or_call = fn_or_call,
-        .data = .data,
-        p_dots = p_dots,
-        filename = filename,
-        return_obj = return_obj,
-        test = test,
-        message_size = message_size
-      )
-    )
-  }
-
-  # stop if evaluation required but fn_or_call
-  # not a call or a function (or a name)
-  # -------------------
-  if (eval && !class(fn_or_call)[1] %in% c("function", "call", "name")) {
-    stop("fn_or_call must be a function or
-    a call (or a name) when eval == TRUE")
-  }
-
-  .save_rds_eval(
+  # create environment to
+  # evaluate in (and fn env, if applicable)
+  env_eval <- .get_env_eval(
     fn_or_call = fn_or_call,
-    p_dots = p_dots,
-    .data = .data,
-    filename = filename,
-    return_obj = return_obj,
-    test = test,
-    message_size = message_size
-    )
-}
-
-# use a generic to deal with
-# function, call and name classes
-.save_rds_eval <- function(fn_or_call,
-                           p_dots,
-                           .data,
-                           filename,
-                           return_obj,
-                           test,
-                           message_size) {
-  UseMethod(".save_rds_eval")
-}
-
-# method to save output when
-# function is the input
-.save_rds_eval.function <- function(fn_or_call,
-                                    p_dots,
-                                    .data,
-                                    filename,
-                                    return_obj,
-                                    test,
-                                    message_size) {
-
-  # set function environment to new env one below global
-  # so that execution environment
-  # cannot enclose anything (permanent)
-  defined_in_pkg <- purrr::map_lgl(
-    rlang::env_parents(environment(fn_or_call)),
-    isNamespace
+    p_dots = p_dots
   )
-  defined_in_pkg <- any(defined_in_pkg)
-
-  environment(fn_or_call) <- switch(as.character(defined_in_pkg),
-    "TRUE" = list2env(
-      p_dots,
-      parent = .get_nearest_namespace(environment(fn_or_call))
-    ),
-    "FALSE" = new.env(parent = .GlobalEnv)
-  )
-
-  .data <- switch(class(.data)[1],
-    "character" = readRDS(.data),
-    "call" = readRDS(
-      eval(.data, envir = rlang::caller_env(n = 2))
-      ),
-    .data
-  )
-
-  if (!is.null(.data)) {
-    assign(".data", value = .data, envir = environment(fn_or_call))
-  }
-
-  # create call text to be parsed
-  parse_text <- "fn_or_call("
-
-  for (i in seq_along(p_dots)) {
-    nm <- names(p_dots)[i]
-    parse_text <- paste0(
-      parse_text,
-      nm, " = p_dots[['", nm, "']], "
-    )
-  }
-
-  if (length(p_dots) > 0) {
-    parse_text <- stringr::str_sub(parse_text, end = - 3)
-  }
-
-  parse_text <- paste0(parse_text, ")")
-
-  # evaluate in current environment
-  obj_out <- eval(
-    rlang::parse_expr(parse_text)
-  )
-
-  saveRDS(
-    object = obj_out,
-    file = filename
-  )
-
-  .test_rds_eval(
-    test = test,
-    filename = filename,
-    message_size = message_size
-  )
-
-  if (!return_obj) {
-    return(filename)
-  }
-  obj_out
-}
-
-# method to save output
-# when input is a call
-.save_rds_eval.call <- function(fn_or_call,
-                                p_dots,
-                                .data,
-                                filename,
-                                return_obj,
-                                test,
-                                message_size) {
-
-  saved_in_pkg <- purrr::map_lgl(
-    rlang::env_parents(rlang::caller_env(n = 2)),
-    isNamespace
-  )
-  saved_in_pkg <- any(saved_in_pkg)
-
-  env_eval <- switch(as.character(saved_in_pkg),
-    "TRUE" = list2env(
-      p_dots,
-      parent = .get_nearest_namespace(
-        rlang::caller_env(n = 2)
-      )
-    ),
-    "FALSE" = list2env(p_dots, parent = .GlobalEnv)
-  )
-
-  .data <- switch(class(.data)[1],
-    "character" = readRDS(.data),
-    "call" = readRDS(
-      eval(.data, envir = rlang::caller_env(n = 2))
-    ),
-    .data
-  )
-
-  if (!is.null(.data)) {
-    assign(".data", value = .data, envir = env_eval)
-  }
-
-  obj_out <- eval(fn_or_call, envir = env_eval)
-
-  saveRDS(
-    object = obj_out,
-    file = filename
-  )
-
-  .test_rds_eval(
-    test = test,
-    filename = filename,
-    message_size = message_size
-  )
-
-  if (!return_obj) {
-    return(filename)
-  }
-  obj_out
-}
-
-# method to save output
-# when input is a call
-.save_rds_eval.name <- function(fn_or_call,
-                                p_dots,
-                                .data,
-                                filename,
-                                return_obj,
-                                test,
-                                message_size) {
-  .save_rds_eval.call(
-    fn_or_call = fn_or_call,
-    p_dots = p_dots,
-    .data = .data,
-    filename = filename,
-    return_obj = return_obj
-  )
-}
-
-.save_rds_eval_non <- function(fn_or_call,
-                               p_dots,
-                               .data,
-                               filename,
-                               return_obj,
-                               test,
-                               message_size) {
 
   if (is.function(fn_or_call)) {
-    defined_in_pkg <- purrr::map_lgl(
-      rlang::env_parents(environment(fn_or_call)),
-      isNamespace
-    )
-    defined_in_pkg <- any(defined_in_pkg)
-
-    env_eval_parent <- switch(as.character(defined_in_pkg),
-      "TRUE" = list2env(
-      p_dots, parent = .get_nearest_namespace(environment(fn_or_call))
-      ),
-      "FALSE" = .GlobalEnv
-    )
-
-    env_eval <- list2env(
-      x = p_dots,
-      parent = env_eval_parent
-    )
-
-    .data <- switch(class(.data)[1],
-      "character" = readRDS(.data),
-      "call" = readRDS(
-        eval(.data, envir = rlang::caller_env(n = 2))
-      ),
-      .data
-    )
-
-    if (!is.null(.data)) {
-      assign(".data", value = .data, envir = env_eval)
-    }
-
     environment(fn_or_call) <- env_eval
-
-  } else {
-    # calls do not enclose environments,
-    # so only give a warning if call is saved
-    # from inside environment
-    env_parents_list <- rlang::env_parents(rlang::caller_env(n = 2))
-    saved_in_pkg <- purrr::map_lgl(
-      env_parents_list,
-      isNamespace
-    )
-    saved_in_pkg <- any(saved_in_pkg)
-
-    env_eval_parent <- switch(as.character(saved_in_pkg),
-      "TRUE" = env_parents_list[[
-        min(which(
-          purrr::map_lgl(env_parents_list, isNamespace)
-        ))
-        ]],
-      "FALSE" = .GlobalEnv
-    )
-
-     env_eval <- list2env(
-       p_dots,
-       parent = env_eval_parent
-     )
-
-    .data <- switch(class(.data)[1],
-      "character" = readRDS(.data),
-      "call" = readRDS(
-        eval(.data, envir = rlang::caller_env(n = 2))
-      ),
-      .data
-    )
-
-    if (!is.null(.data)) {
-      assign(".data", value = .data, envir = env_eval)
-    }
   }
 
-  obj_out <- list(
-    fn_or_call = fn_or_call,
-    p_dots = p_dots,
-    env_eval = env_eval
-  )
+  if (!eval) {
+    obj_out <- list(
+      fn_or_call = fn_or_call,
+      .data = .data,
+      .data_nm = .data_nm,
+      env_eval = env_eval
+    )
 
-  class(obj_out) <- "saver_uneval"
+    class(obj_out) <- "saver_uneval"
+  } else {
+    assign_data_nm(
+      .data = .data,
+      .data_nm = .data_nm,
+      env = env_eval
+    )
+
+    obj_out <- eval_rds(
+      fn_or_call = fn_or_call,
+      env_eval = env_eval
+    )
+  }
 
   saveRDS(
     object = obj_out,
@@ -431,8 +175,8 @@ save_rds_eval <- function(fn_or_call = NULL,
   }
 
   obj_out
-
 }
+
 
 
 #' @title Test whether object can be loaded and its size
@@ -476,13 +220,92 @@ save_rds_eval <- function(fn_or_call = NULL,
   invisible(TRUE)
 }
 
-.get_nearest_namespace <- function(env) {
+.get_nearest_special_env <- function(env) {
+  if (isNamespace(env)) {
+    return(env)
+  }
   env_parents_list <- rlang::env_parents(env)
-  ind_nearest_namespace <- min(which(
+  ind_nearest_special_env <- min(which(
     purrr::map_lgl(
       rlang::env_parents(env),
-      isNamespace
+      function(x) {
+        env_nm <- attr(x, "name")
+        imports_in_nm <- grepl("imports", env_nm)
+        is_global <- identical(x, .GlobalEnv)
+        is_ns <- isNamespace(x)
+        is_ns || imports_in_nm || is_global
+      }
     )
   ))
-  env_parents_list[[ind_nearest_namespace]]
+  env_parents_list[[ind_nearest_special_env]]
+}
+
+.check_if_in_pkg <- function(fn_or_call) {
+  is_ns_vec <- purrr::map_lgl(
+    .check_if_in_pkg_env(fn_or_call = fn_or_call),
+    isNamespace
+  )
+  any(is_ns_vec)
+}
+
+.check_if_in_pkg_env <- function(fn_or_call) {
+  switch(class(fn_or_call)[1],
+    "function" = rlang::env_parents(environment(fn_or_call)),
+    # "call" = .get_nearest_special_env(
+    #  rlang::caller_env(n = 3)
+    #)
+    "call" = rlang::env_parents(
+      rlang::caller_env(n = 3)
+    )
+  )
+}
+
+.get_parent_env_to_list <- function(fn_or_call,
+                                    in_pkg) {
+  switch(as.character(in_pkg),
+    "FALSE" = .GlobalEnv,
+    "TRUE" = switch(class(fn_or_call)[1],
+      "function" = .get_nearest_special_env(
+        environment(fn_or_call)
+      ),
+      "call" = .get_nearest_special_env(
+        rlang::caller_env(n = 3)
+      )
+    )
+  )
+}
+
+.get_env_eval <- function(fn_or_call, p_dots) {
+  in_pkg <- .check_if_in_pkg(fn_or_call = fn_or_call)
+  parent_env_to_list <-
+    .get_parent_env_to_list(
+      fn_or_call = fn_or_call,
+      in_pkg = in_pkg
+    )
+  new.env(
+    parent = list2env(
+      x = p_dots,
+      parent = parent_env_to_list
+    )
+  )
+}
+
+assign_data_nm <- function(.data,
+                           .data_nm,
+                           env) {
+
+  .data <- switch(class(.data)[1],
+    "character" = readRDS(.data),
+    "call" = readRDS(
+      eval(.data, envir = env)
+    ),
+    .data
+  )
+
+  if (!is.null(.data)) {
+    assign(.data_nm, value = .data, envir = env)
+  }
+
+  invisible(TRUE)
+
 }

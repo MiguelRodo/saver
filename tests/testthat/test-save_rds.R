@@ -53,7 +53,13 @@ test_that("save_rds_eval works", {
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
   rds_saved <- readRDS(file.path(dir_save, "mean.rds"))
   expect_identical(class(rds_saved), "saver_uneval")
-  expect_identical(names(rds_saved), c("fn_or_call", "p_dots", "env_eval"))
+  expect_identical(
+    names(rds_saved),
+    c(
+      "fn_or_call", ".data",
+      ".data_nm", "env_eval"
+    )
+  )
 
   # check that object is then evaluated
   # when loading correctly
@@ -98,6 +104,7 @@ test_that("save_rds_eval works", {
   )
   file.remove(file.path(dir_save, "mean.rds"))
 
+
   # no evaluation, with a call
   save_rds_eval(
     fn_or_call = quote(mean(x = x)),
@@ -114,7 +121,7 @@ test_that("save_rds_eval works", {
   expect_identical(class(rds_saved), "saver_uneval")
   expect_identical(
     names(rds_saved),
-    c("fn_or_call", "p_dots", "env_eval")
+    c("fn_or_call", ".data",  ".data_nm", "env_eval")
   )
 
   # check that object is then evaluated
@@ -148,15 +155,14 @@ test_that("save_rds_eval works", {
       eval = TRUE
     )
   }
-  options(warn = 1)
-  options(warn = 2)
   test_fn()
-
+  # od(dir_save)
   large_obj <- readRDS(file.path(dir_save, "large.rds"))
   small_obj <- readRDS(file.path(dir_save, "small.rds"))
+
   expect_true(
-    pryr::object_size(large_obj) >
-      30 * pryr::object_size(small_obj)
+    file.size(file.path(dir_save, "large.rds")) >
+      20 * file.size(file.path(dir_save, "small.rds"))
   )
   expect_identical(
     # names(parent.env(large_obj)),
@@ -314,7 +320,10 @@ test_that("save_rds_eval works", {
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
   rds_saved <- readRDS(file.path(dir_save, "mean.rds"))
   expect_identical(class(rds_saved), "saver_uneval")
-  expect_identical(names(rds_saved), c("fn_or_call", "p_dots", "env_eval"))
+  expect_identical(
+    names(rds_saved),
+    c("fn_or_call", ".data", ".data_nm", "env_eval")
+  )
 
   expect_error(
     save_rds_eval(
@@ -379,7 +388,10 @@ test_that("save_rds_eval works", {
   expect_true(file.exists(file.path(dir_save, "mean.rds")))
   rds_saved <- readRDS(file.path(dir_save, "mean.rds"))
   expect_identical(class(rds_saved), "saver_uneval")
-  expect_identical(names(rds_saved), c("fn_or_call", "p_dots", "env_eval"))
+  expect_identical(
+    names(rds_saved),
+    c("fn_or_call", ".data", ".data_nm", "env_eval")
+  )
 
   expect_error(
     save_rds_eval(
@@ -441,8 +453,10 @@ test_that("save_rds_eval works", {
    expect_true(file.exists(file.path(dir_save, "mean.rds")))
    rds_saved <- readRDS(file.path(dir_save, "mean.rds"))
    expect_identical(class(rds_saved), "saver_uneval")
-   expect_identical(names(rds_saved), c("fn_or_call", "p_dots", "env_eval"))
-
+   expect_identical(
+     names(rds_saved),
+     c("fn_or_call", ".data", ".data_nm", "env_eval")
+   )
    expect_error(
      save_rds_eval(
        fn_or_call = quote(mean(x = .data$x)),
@@ -457,4 +471,15 @@ test_that("save_rds_eval works", {
      )
    )
 
+})
+
+test_that(".get_nearest_non_saver_env works", {
+  expect_identical(
+    .get_nearest_non_saver_env(.GlobalEnv),
+    .GlobalEnv
+  )
+  expect_identical(
+    .get_nearest_non_saver_env(environment(saver::eval_rds)),
+    .GlobalEnv
+  )
 })
