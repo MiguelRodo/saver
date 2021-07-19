@@ -148,7 +148,7 @@ save_rds_eval <- function(fn_or_call = NULL,
     assign_data_nm(
       .data = .data,
       .data_nm = .data_nm,
-      env = env_eval
+      env = rlang::env_parent(env_eval)
     )
 
     obj_out <- eval_rds(

@@ -9,7 +9,10 @@ eval_rds <- function(fn_or_call,
 
   if (is.function(fn_or_call)) {
 
-    param_vec_nm <- names(parent.env(env_eval))
+    param_vec_nm <- c(
+      names(parent.env(env_eval)),
+      names(env_eval)
+    )
 
     # construct call
     assign("fn", fn_or_call, envir = env_eval)
